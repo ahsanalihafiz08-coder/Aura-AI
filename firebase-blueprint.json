@@ -1,0 +1,246 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "Profiles of registered business owners, including settings, pricing plan, and metadata.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "Firebase Auth unique identifier." },
+        "email": { "type": "string", "description": "User corporate email address." },
+        "displayName": { "type": "string", "description": "Full name of the user." },
+        "photoUrl": { "type": "string", "description": "URL to avatar image." },
+        "subscriptionTier": { "type": "string", "description": "Current SaaS plan: Starter, Business, Enterprise." },
+        "whatsappConnected": { "type": "boolean", "description": "Whether Meta WhatsApp Cloud API is linked." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Date/Time account was provisioned." }
+      },
+      "required": ["uid", "email", "displayName", "subscriptionTier", "whatsappConnected", "createdAt"]
+    },
+    "Subscription": {
+      "title": "Subscription",
+      "description": "Tracks active billing subscriptions, tiers, billing cycles, and Stripe/Play store synchronization details.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique subscription document auto-ID." },
+        "userId": { "type": "string", "description": "Reference owner user UID." },
+        "planType": { "type": "string", "description": "Subscription level." },
+        "status": { "type": "string", "description": "Billing state." },
+        "price": { "type": "number", "description": "Recurring amount charged in USD." },
+        "billingCycle": { "type": "string", "description": "Interval term." },
+        "startDate": { "type": "string", "format": "date-time", "description": "Epoch of start cycle." },
+        "endDate": { "type": "string", "format": "date-time", "description": "Epoch of end cycle." }
+      },
+      "required": ["id", "userId", "planType", "status", "price", "billingCycle", "startDate", "endDate"]
+    },
+    "Lead": {
+      "title": "Lead",
+      "description": "Contains business prospects, pipeline status, value, source, and AI automation tasks.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Document auto-ID." },
+        "ownerId": { "type": "string", "description": "ID of the user who owns this lead." },
+        "name": { "type": "string", "description": "Full name of the lead contact." },
+        "business": { "type": "string", "description": "Company name." },
+        "email": { "type": "string", "description": "Email address." },
+        "phone": { "type": "string", "description": "Contact number." },
+        "value": { "type": "number", "description": "Estimated transaction contract value." },
+        "status": { "type": "string", "description": "Pipeline position." },
+        "source": { "type": "string", "description": "Acquisition channel." },
+        "notes": { "type": "string", "description": "Custom annotations or AI summary of conversation." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Lead capture time." }
+      },
+      "required": ["id", "ownerId", "name", "business", "email", "phone", "value", "status", "source", "createdAt"]
+    },
+    "CrmContact": {
+      "title": "CrmContact",
+      "description": "Granular CRM directory of lead touchpoints, department, title, and detailed relationship history.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique contact identifier." },
+        "ownerId": { "type": "string", "description": "Business owner UID." },
+        "leadId": { "type": "string", "description": "Reference parent lead document ID." },
+        "name": { "type": "string", "description": "Full contact name." },
+        "company": { "type": "string", "description": "Associated corporation." },
+        "position": { "type": "string", "description": "Job title." },
+        "email": { "type": "string", "description": "Direct corporate email address." },
+        "phone": { "type": "string", "description": "Direct direct dial number." },
+        "notes": { "type": "string", "description": "Personalized interaction guidelines." },
+        "lastInteraction": { "type": "string", "format": "date-time", "description": "Epoch of the last engagement logs." }
+      },
+      "required": ["id", "ownerId", "leadId", "name", "company", "position", "email", "phone", "lastInteraction"]
+    },
+    "AiChat": {
+      "title": "AiChat",
+      "description": "Detailed communication arrays capturing message streams, active state, and AI intent evaluation metrics.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Conversation room ID." },
+        "leadId": { "type": "string", "description": "Associated prospect ID." },
+        "agentId": { "type": "string", "description": "Target handling automated AI configuration." },
+        "messageHistory": { "type": "array", "description": "List of messages (sender, payload, time)." },
+        "status": { "type": "string", "description": "Active state." },
+        "sentimentScore": { "type": "number", "description": "Estimated customer satisfaction score." },
+        "lastMessageTime": { "type": "string", "format": "date-time", "description": "Epoch of last exchange." }
+      },
+      "required": ["id", "leadId", "agentId", "messageHistory", "status", "sentimentScore", "lastMessageTime"]
+    },
+    "VoiceAgent": {
+      "title": "VoiceAgent",
+      "description": "Configured speech synthesized parameters, speech recognition accents, and outbound call tasks.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique agent model identifier." },
+        "name": { "type": "string", "description": "Visual handle for agent." },
+        "languageCode": { "type": "string", "description": "Target speech model." },
+        "voiceType": { "type": "string", "description": "Selected neural model." },
+        "greetingMessage": { "type": "string", "description": "Outbound call start greeting." },
+        "status": { "type": "string", "description": "Deployment state." },
+        "totalCalls": { "type": "number", "description": "Aggregated call execution counter." },
+        "lastUsedAt": { "type": "string", "format": "date-time", "description": "Epoch of last dialing event." }
+      },
+      "required": ["id", "name", "languageCode", "voiceType", "greetingMessage", "status", "totalCalls", "lastUsedAt"]
+    },
+    "Notification": {
+      "title": "Notification",
+      "description": "System dispatch system holding critical alarms, WhatsApp notifications, and lead events.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Alert dispatch unique ID." },
+        "userId": { "type": "string", "description": "Target recipient UID." },
+        "title": { "type": "string", "description": "Bold alert header." },
+        "body": { "type": "string", "description": "Content descriptive message." },
+        "type": { "type": "string", "description": "Category of notice." },
+        "isRead": { "type": "boolean", "description": "Unread indicator." },
+        "timestamp": { "type": "string", "format": "date-time", "description": "Dispatch epoch." }
+      },
+      "required": ["id", "userId", "title", "body", "type", "isRead", "timestamp"]
+    },
+    "Setting": {
+      "title": "Setting",
+      "description": "Core account features, notifications toggle, Gemini model max token targets, and timezone defaults.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "Target owner UID." },
+        "pushEnabled": { "type": "boolean", "description": "Enable mobile push alerts." },
+        "whatsappIntegrationEnabled": { "type": "boolean", "description": "Deploy WhatsApp Cloud bots." },
+        "autoResponseEnabled": { "type": "boolean", "description": "Let AI answer automatically." },
+        "aiMaxTokens": { "type": "number", "description": "Token allocation limit." },
+        "timezone": { "type": "string", "description": "Preferred workspace timezone." },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Epoch of latest configuration update." }
+      },
+      "required": ["userId", "pushEnabled", "whatsappIntegrationEnabled", "autoResponseEnabled", "aiMaxTokens", "timezone", "updatedAt"]
+    },
+    "Analytics": {
+      "title": "Analytics",
+      "description": "Stores daily metrics, funnel performance, active chat conversions, and pipeline statistics.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Metrics snapshot unique identifier." },
+        "userId": { "type": "string", "description": "Reference owner UID." },
+        "date": { "type": "string", "description": "Target captured date." },
+        "totalLeads": { "type": "number", "description": "Accumulated captured leads." },
+        "activeChats": { "type": "number", "description": "Total messaging channels run." },
+        "voiceCallsDuration": { "type": "number", "description": "Total minutes dialer spent speaking." },
+        "conversionRate": { "type": "number", "description": "Pipeline conversion efficiency (%)." },
+        "revenueEstimates": { "type": "number", "description": "Aggregated prospective contract financial value." }
+      },
+      "required": ["id", "userId", "date", "totalLeads", "activeChats", "voiceCallsDuration", "conversionRate", "revenueEstimates"]
+    },
+    "ActivityLog": {
+      "title": "ActivityLog",
+      "description": "Immutable transactional audit trail capturing user logins, API webhooks, and agent creations.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Log document UUID." },
+        "userId": { "type": "string", "description": "Associated agent UID who made the transaction." },
+        "actionType": { "type": "string", "description": "Type of action." },
+        "description": { "type": "string", "description": "Plain english audit summary text." },
+        "ipAddress": { "type": "string", "description": "Source network identity." },
+        "deviceDetails": { "type": "string", "description": "Device user-agent description." },
+        "timestamp": { "type": "string", "format": "date-time", "description": "Log creation epoch." }
+      },
+      "required": ["id", "userId", "actionType", "description", "ipAddress", "deviceDetails", "timestamp"]
+    },
+    "VoiceSession": {
+      "title": "VoiceSession",
+      "description": "Represents active or historical outbound voice sessions, including parameters and transcripts.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique session ID." },
+        "userId": { "type": "string", "description": "Business owner who triggered the call." },
+        "title": { "type": "string", "description": "Descriptive call title." },
+        "status": { "type": "string", "description": "Call status: connecting, active, completed, failed." },
+        "durationSeconds": { "type": "number", "description": "Call duration in seconds." },
+        "speed": { "type": "number", "description": "Text-to-speech vocal speed." },
+        "pitch": { "type": "number", "description": "Text-to-speech vocal pitch." },
+        "language": { "type": "string", "description": "Synthesized language code." },
+        "assistantMode": { "type": "string", "description": "Selected AI assistant personality." },
+        "timestamp": { "type": "string", "format": "date-time", "description": "Call initiation epoch." },
+        "transcripts": { "type": "array", "description": "Full verbal transcription exchange lines." }
+      },
+      "required": ["id", "userId", "title", "status", "durationSeconds", "speed", "pitch", "language", "assistantMode", "timestamp"]
+    },
+    "CallScript": {
+      "title": "CallScript",
+      "description": "Generated outbound training scripts for CRM campaigns.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique script document ID." },
+        "title": { "type": "string", "description": "Script title." },
+        "mode": { "type": "string", "description": "Associated assistant mode." },
+        "language": { "type": "string", "description": "Script language locale." },
+        "generatedScript": { "type": "string", "description": "The markdown generated campaign call script content." }
+      },
+      "required": ["id", "title", "mode", "language", "generatedScript"]
+    }
+  },
+  "firestore": {
+    "users/{userId}": {
+      "schema": "User",
+      "description": "Registered SaaS users"
+    },
+    "subscriptions/{subId}": {
+      "schema": "Subscription",
+      "description": "Active subscriptions"
+    },
+    "leads/{leadId}": {
+      "schema": "Lead",
+      "description": "Business prospects and pipelines"
+    },
+    "crm_contacts/{contactId}": {
+      "schema": "CrmContact",
+      "description": "Contact granular data points"
+    },
+    "ai_chats/{chatId}": {
+      "schema": "AiChat",
+      "description": "Lead automatic AI conversation message streams"
+    },
+    "voice_agents/{agentId}": {
+      "schema": "VoiceAgent",
+      "description": "VoIP agent voice settings"
+    },
+    "notifications/{notifId}": {
+      "schema": "Notification",
+      "description": "System notices and lead alerts"
+    },
+    "settings/{userId}": {
+      "schema": "Setting",
+      "description": "Individual workspace configuration"
+    },
+    "analytics/{analyticsId}": {
+      "schema": "Analytics",
+      "description": "Daily metrics summaries"
+    },
+    "activity_logs/{logId}": {
+      "schema": "ActivityLog",
+      "description": "Immutable operations log"
+    },
+    "voice_sessions/{sessionId}": {
+      "schema": "VoiceSession",
+      "description": "Active or historical AI calling sessions"
+    },
+    "call_scripts/{scriptId}": {
+      "schema": "CallScript",
+      "description": "Generated outreach scripts templates"
+    }
+  }
+}

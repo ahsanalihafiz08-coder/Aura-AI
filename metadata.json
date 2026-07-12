@@ -1,0 +1,6 @@
+{
+  "name": "Aura AI Studio",
+  "description": "Premium CTO Portal, Interactive Android App Simulator, and Phase 1 Business Automation Architecture Strategy.",
+  "requestFramePermissions": ["microphone"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

@@ -1,0 +1,252 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global Safety Net - Catch All Default Deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // --- REUSABLE SECURITY PRIMITIVES ---
+    
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // Ensure email is verified for writes (except in safe sandbox profiles if needed)
+    function isEmailVerified() {
+      return isSignedIn() && (request.auth.token.email_verified == true || request.auth.token.firebase.sign_in_provider == 'anonymous');
+    }
+
+    // --- ENTITY SCHEMAS & VALIDATION BLUEPRINTS ---
+
+    // 1. User Profile validation
+    function isValidUser(data) {
+      return data.keys().hasAll(['uid', 'email', 'displayName', 'subscriptionTier', 'whatsappConnected', 'createdAt'])
+        && data.keys().size() == 6
+        && data.uid == request.auth.uid
+        && data.email is string && data.email.size() <= 256
+        && data.displayName is string && data.displayName.size() <= 100
+        && data.subscriptionTier is string && (data.subscriptionTier == 'Free' || data.subscriptionTier == 'Pro' || data.subscriptionTier == 'Business' || data.subscriptionTier == 'Enterprise' || data.subscriptionTier == 'Starter')
+        && data.whatsappConnected is bool
+        && data.createdAt is string; // ISO Date timestamp
+    }
+
+    // 2. Lead validation
+    function isValidLead(data) {
+      return data.keys().hasAll(['id', 'ownerId', 'name', 'business', 'email', 'phone', 'value', 'status', 'source', 'createdAt'])
+        && data.keys().size() <= 11 // support notes as optional
+        && data.id is string && data.id.size() <= 128
+        && data.ownerId == request.auth.uid
+        && data.name is string && data.name.size() <= 100
+        && data.business is string && data.business.size() <= 150
+        && data.email is string && data.email.size() <= 256
+        && data.phone is string && data.phone.size() <= 30
+        && data.value is number && data.value >= 0
+        && data.status is string && data.status.size() <= 50
+        && data.source is string && data.source.size() <= 50
+        && data.createdAt is string;
+    }
+
+    // 3. CRM Contact validation
+    function isValidCrmContact(data) {
+      return data.keys().hasAll(['id', 'ownerId', 'leadId', 'name', 'company', 'position', 'email', 'phone', 'lastInteraction'])
+        && data.keys().size() <= 10 // support notes as optional
+        && data.id is string && data.id.size() <= 128
+        && data.ownerId == request.auth.uid
+        && data.leadId is string && data.leadId.size() <= 128
+        && data.name is string && data.name.size() <= 100
+        && data.company is string && data.company.size() <= 150
+        && data.position is string && data.position.size() <= 100
+        && data.email is string && data.email.size() <= 256
+        && data.phone is string && data.phone.size() <= 30
+        && data.lastInteraction is string;
+    }
+
+    // 4. AI Chat validation
+    function isValidAiChat(data) {
+      return data.keys().hasAll(['id', 'userId', 'title', 'lastMessageTime', 'messageHistory'])
+        && data.id is string && data.id.size() <= 128
+        && data.userId == request.auth.uid
+        && data.title is string && data.title.size() <= 200
+        && data.lastMessageTime is string
+        && data.messageHistory is list;
+    }
+
+    // 5. Voice Session validation
+    function isValidVoiceSession(data) {
+      return data.keys().hasAll(['id', 'userId', 'title', 'status', 'durationSeconds', 'speed', 'pitch', 'language', 'assistantMode', 'timestamp'])
+        && data.keys().size() <= 11 // support transcripts as optional
+        && data.id is string && data.id.size() <= 128
+        && data.userId == request.auth.uid
+        && data.title is string && data.title.size() <= 200
+        && data.status is string && (data.status == 'connecting' || data.status == 'active' || data.status == 'completed' || data.status == 'failed')
+        && data.durationSeconds is number
+        && data.speed is number
+        && data.pitch is number
+        && data.language is string
+        && data.assistantMode is string
+        && data.timestamp is string;
+    }
+
+    // 6. Activity Log validation
+    function isValidActivityLog(data) {
+      return data.keys().hasAll(['id', 'userId', 'actionType', 'description', 'ipAddress', 'deviceDetails', 'timestamp'])
+        && data.keys().size() == 7
+        && data.id is string && data.id.size() <= 128
+        && data.userId == request.auth.uid
+        && data.actionType is string && data.actionType.size() <= 100
+        && data.description is string && data.description.size() <= 500
+        && data.ipAddress is string && data.ipAddress.size() <= 45
+        && data.deviceDetails is string && data.deviceDetails.size() <= 500
+        && data.timestamp is string;
+    }
+
+    // 7. Notification validation
+    function isValidNotification(data) {
+      return data.keys().hasAll(['id', 'userId', 'title', 'body', 'type', 'isRead', 'timestamp'])
+        && data.keys().size() == 7
+        && data.id is string && data.id.size() <= 128
+        && data.userId == request.auth.uid
+        && data.title is string && data.title.size() <= 200
+        && data.body is string && data.body.size() <= 1000
+        && data.type is string && data.type.size() <= 50
+        && data.isRead is bool
+        && data.timestamp is string;
+    }
+
+    // 8. Settings validation
+    function isValidSetting(data) {
+      return data.keys().hasAll(['userId', 'pushEnabled', 'whatsappIntegrationEnabled', 'autoResponseEnabled', 'aiMaxTokens', 'timezone', 'updatedAt'])
+        && data.keys().size() == 7
+        && data.userId == request.auth.uid
+        && data.pushEnabled is bool
+        && data.whatsappIntegrationEnabled is bool
+        && data.autoResponseEnabled is bool
+        && data.aiMaxTokens is number && data.aiMaxTokens > 0
+        && data.timezone is string && data.timezone.size() <= 50
+        && data.updatedAt is string;
+    }
+
+
+    // --- COLLECTION RULES MATCH BLOCKS ---
+
+    // 1. Users Profile Collection
+    match /users/{userId} {
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
+      // Ensure subscription status can only be set to Free/Starter on initial signup by user
+      allow create: if isOwner(userId) && isValidUser(incoming()) && (incoming().subscriptionTier == 'Free' || incoming().subscriptionTier == 'Starter');
+      // Protect subscription tier and WhatsApp credentials from direct client escalations
+      allow update: if isOwner(userId) && isValidUser(incoming()) && (
+        incoming().subscriptionTier == existing().subscriptionTier &&
+        incoming().whatsappConnected == existing().whatsappConnected
+      );
+      allow delete: if false; // Profiles are permanent
+    }
+
+    // 2. Subscriptions Collection (Read-only for owner, controlled by play billing system server-side)
+    match /subscriptions/{subId} {
+      allow get: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow write: if false; // Immutable client-side. Modified only via Server verified Google Play receipts
+    }
+
+    // 3. Leads Collection
+    match /leads/{leadId} {
+      allow get, delete: if isSignedIn() && existing().ownerId == request.auth.uid;
+      allow list: if isSignedIn() && resource.data.ownerId == request.auth.uid;
+      allow create: if isSignedIn() && isValidLead(incoming()) && incoming().ownerId == request.auth.uid && isValidId(leadId);
+      allow update: if isSignedIn() && existing().ownerId == request.auth.uid && isValidLead(incoming()) && incoming().ownerId == existing().ownerId;
+    }
+
+    // 4. CRM Contacts Collection
+    match /crm_contacts/{contactId} {
+      allow get, delete: if isSignedIn() && existing().ownerId == request.auth.uid;
+      allow list: if isSignedIn() && resource.data.ownerId == request.auth.uid;
+      allow create: if isSignedIn() && isValidCrmContact(incoming()) && incoming().ownerId == request.auth.uid && isValidId(contactId);
+      allow update: if isSignedIn() && existing().ownerId == request.auth.uid && isValidCrmContact(incoming()) && incoming().ownerId == existing().ownerId;
+    }
+
+    // 5. AI Chats Collection
+    match /ai_chats/{chatId} {
+      allow get, delete: if isSignedIn() && existing().userId == request.auth.uid;
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && isValidAiChat(incoming()) && incoming().userId == request.auth.uid && isValidId(chatId);
+      allow update: if isSignedIn() && existing().userId == request.auth.uid && isValidAiChat(incoming()) && incoming().userId == existing().userId;
+    }
+
+    // 6. Voice Agents Collection (SaaS settings templates, global but only readable by users, writes restricted)
+    match /voice_agents/{agentId} {
+      allow read: if isSignedIn();
+      allow write: if false; // System configs
+    }
+
+    // 7. Notifications Collection
+    match /notifications/{notifId} {
+      allow get, delete: if isSignedIn() && existing().userId == request.auth.uid;
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && isValidNotification(incoming()) && incoming().userId == request.auth.uid && isValidId(notifId);
+      allow update: if isSignedIn() && existing().userId == request.auth.uid && isValidNotification(incoming()) && incoming().userId == existing().userId;
+    }
+
+    // 8. Settings Collection
+    match /settings/{userId} {
+      allow read: if isOwner(userId);
+      allow create, update: if isOwner(userId) && isValidSetting(incoming());
+      allow delete: if false;
+    }
+
+    // 9. Analytics Collection (SaaS projections, populated server-side or via background aggregations)
+    match /analytics/{analyticsId} {
+      allow get: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow write: if false; // Aggregated via cloud services
+    }
+
+    // 10. Activity Logs Collection (Write-once immutable logs)
+    match /activity_logs/{logId} {
+      allow get: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && isValidActivityLog(incoming()) && incoming().userId == request.auth.uid && isValidId(logId);
+      allow update, delete: if false; // Permanent audit trails
+    }
+
+    // 11. Voice Sessions Collection (Outbound calling records)
+    match /voice_sessions/{sessionId} {
+      allow get, delete: if isSignedIn() && existing().userId == request.auth.uid;
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && isValidVoiceSession(incoming()) && incoming().userId == request.auth.uid && isValidId(sessionId);
+      allow update: if isSignedIn() && existing().userId == request.auth.uid && isValidVoiceSession(incoming()) && incoming().userId == existing().userId;
+    }
+
+    // 12. Call Scripts Collection (Campaign outreach templates)
+    match /call_scripts/{scriptId} {
+      allow read: if isSignedIn();
+      allow write: if isSignedIn() && isValidId(scriptId); // Let users save call script templates
+    }
+    
+    // 13. Invoices Collection
+    match /invoices/{invoiceId} {
+      allow get: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow write: if false; // Read-only for users, managed via verify server endpoint
+    }
+  }
+}
