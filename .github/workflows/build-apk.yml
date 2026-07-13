@@ -18,11 +18,13 @@ jobs:
           java-version: '11'
           distribution: 'adopt'
 
-      - name: Grant permissions
-        run: chmod +x gradlew
+      - name: Setup Gradle Wrapper
+        run: |
+          chmod +x gradlew
+          gradle wrapper --gradle-version 7.6
 
       - name: Build Debug APK
-        run: ./gradlew clean assembleDebug
+        run: ./gradlew clean assembleDebug --stacktrace
 
       - name: Upload APK to Artifacts
         uses: actions/upload-artifact@v3
