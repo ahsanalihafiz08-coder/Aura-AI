@@ -27,7 +27,7 @@ jobs:
       - name: Build Debug APK
         run: |
           export PATH=$PWD/gradle-8.0/bin:$PATH
-          gradle clean assembleDebug
+          gradle clean assembleDebug --no-daemon
 
       - name: Upload APK to Artifacts
         uses: actions/upload-artifact@v4
